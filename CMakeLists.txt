@@ -25,7 +25,7 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
 endif()
 
 
-add_executable(${PROJECT_NAME} "src/main.c")
+add_executable(${PROJECT_NAME} "src/main.c" "src/hud.c")
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "experiment")
 
 # NOTE: It seems like Raylib needs absolute file paths when dealing with files. This will do *for now*.
