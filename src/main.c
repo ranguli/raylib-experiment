@@ -29,6 +29,7 @@
 #endif
 
 #define MAX_COLUMNS 20
+#define MODEL_COUNT 100
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -75,6 +76,19 @@ int main(void) {
 
   // Load plane model from a generated mesh
   Model plane = LoadModelFromMesh(GenMeshPlane(32.0f, 32.0f, 3, 3));
+  // Load cube model by generating a cube mesh
+  Model player = LoadModelFromMesh(GenMeshCube(0.5f, 0.5f, 0.5f));
+
+  /** Keep track of the models we're adding so we can unload them in a loop.
+   *
+   * NOTE: We should either make the jump to ECS, or use maybe use a hashmap for this kind of tracking.
+   * A flat list is not ideal, because we're going to want to be able to retrieve objects by their type (i.e
+   * player) in order to operate on them in a way thats unique to their nature.
+   *
+   */
+  Model models[MODEL_COUNT];
+  models[0] = plane;
+  models[1] = player;
 
   /** Load basic lighting shaders. I have no god damn clue how shaders work, we're just importing the stuff
    * from the raylib example. The only difference is that I'm just using the shaders for OpenGL 3.30 and not
@@ -108,9 +122,15 @@ int main(void) {
   int ambientLoc = GetShaderLocation(shader, "ambient");
   SetShaderValue(shader, ambientLoc, (float[4]){0.1f, 0.1f, 0.1f, 1.0f}, SHADER_UNIFORM_VEC4);
 
-  // Assign out lighting shader to model
-  plane.materials[0].shader = shader;
-  // cube.materials[0].shader = shader;
+  /** Apply our shader to all of our models.
+   *
+   * NOTE: This makes the assumption that we actually want everything in this list to have the shader applied.
+   * We might run into situations in the future where we don't want that.
+   */
+
+  for (int i = 0; i < MODEL_COUNT; i++) {
+    models[i].materials[0].shader = shader;
+  }
 
   // Create a single light for now.
   Light lights[MAX_LIGHTS] = {0};
@@ -230,8 +250,7 @@ int main(void) {
 
     // Draw player cube
     if (cameraMode == CAMERA_THIRD_PERSON) {
-      DrawCube(camera.target, 0.5f, 0.5f, 0.5f, PURPLE);
-      DrawCubeWires(camera.target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
+      DrawModel(player, camera.target, 1.0f, PURPLE);
     }
 
     // Draw spheres to show where the lights are
@@ -254,8 +273,10 @@ int main(void) {
   // De-Initialization
   //--------------------------------------------------------------------------------------
 
-  // Now that our plane is a model, it needs to be unloaded
-  UnloadModel(plane);
+  // Unload models
+  for (int i = 0; i < arrlen(models); i++) {
+    UnloadModel(models[i]);
+  }
 
   CloseWindow(); // Close window and OpenGL context
   //--------------------------------------------------------------------------------------
